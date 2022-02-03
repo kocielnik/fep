@@ -17,18 +17,20 @@ def u_rotate(phi, u):
     norm_u = np.power(np.sum(np.power(u,2)),.5)
     u = u/norm_u
     rot_mat = np.zeros((3, 3))
-    
+
     rot_mat[0,0] = np.cos(phi)+np.power(u[0],2)*(1-np.cos(phi))
     rot_mat[0,1] = u[0]*u[1]*(1-np.cos(phi))-u[2]*np.sin(phi)
     rot_mat[0,2] = u[0]*u[2]*(1-np.cos(phi))+u[1]*np.sin(phi)
-    
+
     rot_mat[1,0] = u[0]*u[1]*(1-np.cos(phi))+u[2]*np.sin(phi)
     rot_mat[1,1] = np.cos(phi)+np.power(u[1],2)*(1-np.cos(phi))
     rot_mat[1,2] = u[2]*u[1]*(1-np.cos(phi))-u[0]*np.sin(phi)
-    
+
     rot_mat[2,0] = u[0]*u[2]*(1-np.cos(phi))-u[1]*np.sin(phi)
     rot_mat[2,1] = u[2]*u[1]*(1-np.cos(phi))+u[0]*np.sin(phi)
     rot_mat[2,2] = np.cos(phi)+np.power(u[2],2)*(1-np.cos(phi))
+
+    return rot_mat
 
 def _parsing_poscar(lines):
     name = lines[0]
@@ -43,9 +45,9 @@ def _parsing_poscar(lines):
     positions = [p[:-1] for p in positions]
     positions = np.array([p.split() for p in positions], float)
     return name, basex, basey, basez, atoms_tot, positions
-    
+
 def _rotating_positions(basex, basey, basez, positions):
-    #fixing x    
+    #fixing x
     if basex[1] != 0 or basex[2] != 0:
         rotation_vecotr = np.cross([1,0,0], basex)
         rotation_angle = angle([1,0,0], basex)
@@ -88,21 +90,21 @@ def _positive_vectors(basex, basey, basez, positions):
     return basex, basey, basez, positions
 
 def _axis_swap(swap, basex, basey, basez, positions):
-    if swap=='xy' or swap=='yx':
+    if swap in ('xy', 'yx'):
         temp = basex
         basex = basey
         basey = temp
         temp = positions[:, 0 ]
         positions[:,0] = positions[:,1]
         positions[:,1] = temp
-    if swap=='xz' or swap=='zx':
+    if swap in ('xz', 'zx'):
         temp = basex
         basex = basez
         basez = temp
         temp = positions[:, 0 ]
         positions[:,0] = positions[:,2]
         positions[:,2] = temp
-    if swap=='zy' or swap=='yz':
+    if swap in ('zy', 'yz'):
         temp = basez
         basez = basey
         basey = temp
@@ -112,49 +114,49 @@ def _axis_swap(swap, basex, basey, basez, positions):
     return basex, basey, basez, positions
 
 def geometry_to(filein):
-        file = open(filein)
-        lines = file.readlines()
-        file.close()
+    file = open(filein)
+    lines = file.readlines()
+    file.close()
 
-        basis = [l for l in lines if l[:14]=='lattice_vector']        
-        core = [l for l in lines if l[:4]=='atom']
+    basis = [l for l in lines if l[:14]=='lattice_vector']
+    core = [l for l in lines if l[:4]=='atom']
 
-        name = 'name\n'
-        basis = [l[15:] for l in basis]
-        basex = np.array([float(x) for x in basis[0].split()])
-        basey = np.array([float(x) for x in basis[1].split()])
-        basez = np.array([float(x) for x in basis[2].split()])
-        
-        labels = [n.split(" ")[-1][:-1] for n in core]
-        labels = np.array(labels)
-        atoms_type = np.unique(labels)
-        atoms_quantity = []
-        for atom in atoms_type:
-            atoms_quantity.append(np.sum(labels==atom))
-        atoms_variety = len(atoms_quantity)
-        
-        positions_splited = []
-        for at in atoms_type:
-            position_one_atom_type = []
-            for c in core:
-                data = c.split()[1:]
-                if data[-1]==at:
-                    position_one_atom_type.append(data[:3])
-            positions_splited.append(np.array(position_one_atom_type, float))
-        return name, basex, basey, basez, atoms_type, atoms_quantity, atoms_variety, positions_splited
+    name = 'name\n'
+    basis = [l[15:] for l in basis]
+    basex = np.array([float(x) for x in basis[0].split()])
+    basey = np.array([float(x) for x in basis[1].split()])
+    basez = np.array([float(x) for x in basis[2].split()])
+
+    labels = [n.split(" ")[-1][:-1] for n in core]
+    labels = np.array(labels)
+    atoms_type = np.unique(labels)
+    atoms_quantity = []
+    for atom in atoms_type:
+        atoms_quantity.append(np.sum(labels==atom))
+    atoms_variety = len(atoms_quantity)
+
+    positions_splited = []
+    for at in atoms_type:
+        position_one_atom_type = []
+        for c in core:
+            data = c.split()[1:]
+            if data[-1]==at:
+                position_one_atom_type.append(data[:3])
+        positions_splited.append(np.array(position_one_atom_type, float))
+    return name, basex, basey, basez, atoms_type, atoms_quantity, atoms_variety, positions_splited
 
 def lammps_to(filein):
     file = open(filein)
     lines = file.readlines()
     file.close()
-    
+
     name = lines[0]
     atoms_quantity_total = int(lines[2].split()[0])
     atoms_variety = int(lines[3].split()[0])
     atoms_type = lines[12:12+atoms_variety]
     atoms_type = [float(a.split()[1]) for a in atoms_type]
     atoms_type = [mases_to_symbols[a] for a in atoms_type]
-    
+
     basis = lines[5:9]
     basis = [b.split() for b in basis]
 
@@ -164,11 +166,11 @@ def lammps_to(filein):
     xy = float(basis[3][0])
     xz = float(basis[3][1])
     yz = float(basis[3][2])
-    
+
     basex = np.array([xl[1]-xl[0], 0, 0])
     basey = np.array([xy, yl[1]-yl[0], 0])
     basez = np.array([xz, yz, zl[1]-zl[0]])
-    
+
     positions = lines[15+atoms_variety:15+atoms_variety+atoms_quantity_total]
     positions = np.asanyarray([p.split()[:5] for p in positions])
     pos_idx = positions[:,0].astype(int)-1
@@ -176,7 +178,7 @@ def lammps_to(filein):
     positions = positions[:,2:].astype(float)
     pos_type = pos_type[pos_idx]
     positions = positions[pos_idx,:]
-    
+
     positions_splited = []
     atoms_quantity = []
     for a in range(atoms_variety):
@@ -190,7 +192,7 @@ def to_poscar(
         atoms_type, atoms_quantity, atoms_variety,
         positions_splited,
         fileout,
-        ):    
+        ):
     poscar = [name]
     poscar.append('1.0\n')
     poscar.append('\t'+str(basex[0])+'\t'+str(basex[1]) +'\t' + str(basex[2]) + '\n')
@@ -203,7 +205,7 @@ def to_poscar(
         for p in positions:
             poscar.append(str(p[0]) + '\t' + str(p[1]) + '\t' + str(p[2]) + '\t' + '\n')
     poscar = "".join(poscar)
-    
+
     file = open(fileout, 'w')
     file.write(poscar)
     file.close()
@@ -216,19 +218,19 @@ def poscar_to(file_in):
     name, basex, basey, basez, atoms_tot, positions = _parsing_poscar(lines)
     basex, basey, basez, positions = _rotating_positions(basex, basey, basez, positions)
     basex, basey, basez, positions = _positive_vectors(basex, basey, basez, positions)
-    
+
     atoms_type = list(filter(None,lines[5][:-1].split()))
     atoms_quantity = np.array(list(filter(None,lines[6][:-1].split())), int)
     atoms_variety = len(atoms_quantity)
     positions = lines[8:]
     positions = np.asanyarray([p.split() for p in positions], float)
-    
+
     positions_splited = []
     nl = 0
     for i in range(atoms_variety):
         positions_splited.append(positions[nl:nl+atoms_quantity[i]])
         nl = nl + atoms_quantity[i]
-    
+
     return name, basex, basey, basez, atoms_type, atoms_quantity, atoms_variety, positions_splited
 
 def desc_reader(fpath, norm_folder):
@@ -267,11 +269,11 @@ def _calc_alfa_pieces(fpath_training, training_set, sigma, l, se):
     desc = []
     atom_quant = []
     Pn = []
-    
+
     file = open(fpath_training+'fe.dat')
     data = file.readlines()[1:]
     file.close()
-    
+
     fe_samples = [d.split()[0] for d in data]
     idx = np.argsort(fe_samples)
     F = np.array([d.split()[1] for d in data], dtype=float)[idx]
@@ -310,7 +312,7 @@ def _calc_alfa_pieces(fpath_training, training_set, sigma, l, se):
         print('cholesky decomposition failed')
         alfa_braket_inv = np.linalg.inv(alfa_braket)
     return alfa_braket, alfa_braket_inv, F, len_k, L, K, desc
-    
+
 def calc_mlh(fpath_training, training_set, sigma, l, se):
     alfa_braket, alfa_braket_inv, F, len_k, L, K, desc = _calc_alfa_pieces(
             fpath_training, training_set, 
@@ -318,8 +320,8 @@ def calc_mlh(fpath_training, training_set, sigma, l, se):
             )
 #    #minimise that!
     mlh =   (
-            .5*np.log(np.abs(np.linalg.det(alfa_braket))) + 
-            .5*np.matmul(F.T, np.matmul(alfa_braket_inv, F)) + 
+            .5*np.log(np.abs(np.linalg.det(alfa_braket))) +
+            .5*np.matmul(F.T, np.matmul(alfa_braket_inv, F)) +
             .5*len_k*np.log(2*np.pi)
             )
     return mlh
@@ -342,7 +344,7 @@ def calc_prediction(fpath_training, fpath_predication, prediction_set, alfa, des
         Pns = np.sum(poscar_to(fpath_predication + ps+'/POSCAR')[5])
         _desc, shape, _atom_quant = desc_reader(fpath_predication + ps, fpath_training)
         descs = np.asanyarray(np.split(_desc, Pns))
-        
+
         #calculating covariance
         ks = gk(desc, descs, sigma, l, K, Pns)
 
