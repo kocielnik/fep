@@ -7,9 +7,15 @@ from fep_utils import (
         geometry_to, lammps_to, to_poscar,
         )
 
-dir_path = path.dirname(path.realpath(__file__)) + '/'
+def get_dir_path():
+    """
+    >>> get_dir_path()[-4:]
+    'fep/'
+    """
+    return path.dirname(path.realpath(__file__)) + '/'
 
 def gen_dscribe(samples, rcut, sigma):
+
     desc_generator = SOAP(
         species=['H', 'C'],
         rcut=rcut,
@@ -56,6 +62,8 @@ def norm_descriptor(samples, outfile):
             desc_mean=desc_mean,
             desc_std=desc_std,
             )
+
+dir_path = get_dir_path()
 
 #training set
 fpath = dir_path+'training/'
