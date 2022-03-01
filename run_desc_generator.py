@@ -1,18 +1,14 @@
-import numpy as np
+"""Generate descriptors."""
+
 from os import path
+import numpy as np
 from dscribe.descriptors import SOAP
 from ase.io import read
-from fep_utils import (
-        list_of_directories, list_of_files,
-        geometry_to, lammps_to, to_poscar,
-        )
-
-def get_dir_path():
-    """
-    >>> get_dir_path()[-4:]
-    'fep/'
-    """
-    return path.dirname(path.realpath(__file__)) + '/'
+from fep_utils import (list_of_directories,
+                       list_of_files,
+                       geometry_to,
+                       lammps_to,
+                       to_poscar)
 
 def gen_dscribe(samples, rcut, sigma):
 
@@ -63,17 +59,37 @@ def norm_descriptor(samples, outfile):
             desc_std=desc_std,
             )
 
-dir_path = get_dir_path()
+def get_dir_path():
+    """
+    >>> get_dir_path()[-4:]
+    'fep/'
+    """
+    return path.dirname(path.realpath(__file__)) + '/'
 
-#training set
-fpath = dir_path+'training/'
-samples = list_of_directories(fpath)
-samples_dir = [fpath+sample for sample in samples]
-gen_dscribe(samples_dir, 6, 1)
-norm_descriptor(samples_dir, dir_path+'training/norm')
+def get_samples_dir(dir_path, subdir):
+    fpath = dir_path + subdir + '/'
+    samples = list_of_directories(fpath)
+    samples_dir = [fpath+sample for sample in samples]
 
-#validation set
-fpath = dir_path+'prediction/'
-samples = list_of_directories(fpath)
-samples_dir = [fpath+sample for sample in samples]
-gen_dscribe(samples_dir, 6, 1)
+    return samples_dir
+
+def gen_dscribe_for(dir_path, phase):
+    samples_dir = get_samples_dir(dir_path, phase)
+    gen_dscribe(samples_dir, 6, 1)
+
+def generate_training_set(dir_path):
+    gen_dscribe_for(dir_path, 'training')
+    samples_dir = get_samples_dir(dir_path, 'training')
+    norm_descriptor(samples_dir, dir_path+'training/norm')
+
+def generate_validation_set(dir_path):
+    gen_dscribe_for(dir_path, 'prediction')
+
+def main():
+    dir_path = get_dir_path()
+
+    generate_training_set(dir_path)
+    generate_validation_set(dir_path)
+
+if __name__ == "__main__":
+    main()
