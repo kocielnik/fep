@@ -66,20 +66,21 @@ def get_dir_path():
     """
     return path.dirname(path.realpath(__file__)) + '/'
 
-def get_samples_dir(dir_path, subdir):
-    fpath = dir_path + subdir + '/'
+def get_samples_dir(fpath):
+    """
+    >>> assert 'predictionANTCEN19' in get_samples_dir("prediction")
+    """
     samples = list_of_directories(fpath)
-    samples_dir = [fpath+sample for sample in samples]
 
-    return samples_dir
+    return [fpath+sample for sample in samples]
 
 def gen_dscribe_for(dir_path, phase):
-    samples_dir = get_samples_dir(dir_path, phase)
+    samples_dir = get_samples_dir(path.join(dir_path, phase))
     gen_dscribe(samples_dir, 6, 1)
 
 def generate_training_set(dir_path):
     gen_dscribe_for(dir_path, 'training')
-    samples_dir = get_samples_dir(dir_path, 'training')
+    samples_dir = get_samples_dir(path.join(dir_path, 'training'))
     norm_descriptor(samples_dir, dir_path+'training/norm')
 
 def generate_validation_set(dir_path):
